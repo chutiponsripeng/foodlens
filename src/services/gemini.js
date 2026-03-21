@@ -1,5 +1,5 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`
 
 export async function analyzeFoodImage(base64Image) {
     const response = await fetch(API_URL, {
@@ -32,6 +32,7 @@ export async function analyzeFoodImage(base64Image) {
     })
 
     const data = await response.json()
+    console.log(data) // ดูว่า response มีอะไร
     const text = data.candidates[0].content.parts[0].text
     const clean = text.replace(/```json|```/g, '').trim()
     return JSON.parse(clean)

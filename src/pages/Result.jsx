@@ -1,6 +1,9 @@
-import { categories } from "../components/CategoryIcons";
+import { useState } from "react"
+import { categories } from "../components/CategoryIcons"
+import { db } from "../firebase/config"
+import { collection, addDoc } from "firebase/firestore"
 
-const MacroCard = ({ label, value, unit, bg, iconBg, textColor, icon }) => (
+const MacroCard = ({ label, value, unit, bg, textColor, icon }) => (
   <div className="bg-white rounded-xl border flex flex-col items-center py-2.5 px-1 gap-1" style={{ borderColor: "#E2E8F0" }}>
     <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: bg }}>
       {icon}
@@ -8,9 +11,36 @@ const MacroCard = ({ label, value, unit, bg, iconBg, textColor, icon }) => (
     <div className="text-[15px] font-semibold" style={{ color: textColor }}>{value}{unit}</div>
     <div className="text-[8px] font-light" style={{ color: "#8A97A8" }}>{label}</div>
   </div>
-);
+)
 
 export default function Result({ food, onNavigate }) {
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  // ฟังก์ชันบันทึกลง Firestore จริงๆ
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await addDoc(collection(db, 'meals'), {
+        name: food.name,
+        calories: food.calories,
+        protein: food.protein,
+        fat: food.fat,
+        carbs: food.carbs,
+        confidence: food.confidence,
+        category: food.category,
+        createdAt: new Date().toISOString()
+      })
+      setSaved(true)
+      setTimeout(() => onNavigate("history"), 1000)
+    } catch (e) {
+      console.error(e)
+      alert("บันทึกไม่ได้ ลองใหม่")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (!food) {
     return (
       <div className="flex flex-col items-center justify-center h-full pt-24 gap-4 px-8 text-center">
@@ -31,11 +61,11 @@ export default function Result({ food, onNavigate }) {
           ไปหน้าสแกน
         </button>
       </div>
-    );
+    )
   }
 
-  const cat = categories.find((c) => c.id === "chicken");
-  const pct = Math.round((food.calories / food.goalCalories) * 100);
+  const cat = categories.find((c) => c.id === "chicken")
+  const pct = Math.round((food.calories / food.goalCalories) * 100)
 
   return (
     <div className="flex flex-col">
@@ -70,7 +100,6 @@ export default function Result({ food, onNavigate }) {
               <circle cx="32" cy="22" r="4" fill="#D85A30" opacity="0.6" />
             </svg>
           </div>
-          {/* Category Badge */}
           <div
             className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
             style={{ background: cat?.bg }}
@@ -122,11 +151,8 @@ export default function Result({ food, onNavigate }) {
         {/* Macro Cards */}
         <div className="grid grid-cols-3 gap-2">
           <MacroCard
-            label="โปรตีน"
-            value={food.protein}
-            unit="g"
-            bg="#E6F1FB"
-            textColor="#0C447C"
+            label="โปรตีน" value={food.protein} unit="g"
+            bg="#E6F1FB" textColor="#0C447C"
             icon={
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M3 11V5c0-1.7 1.3-3 3-3s3 1.3 3 3v6" stroke="#378ADD" strokeWidth="1.1" strokeLinecap="round" />
@@ -135,11 +161,8 @@ export default function Result({ food, onNavigate }) {
             }
           />
           <MacroCard
-            label="ไขมัน"
-            value={food.fat}
-            unit="g"
-            bg="#FAEEDA"
-            textColor="#633806"
+            label="ไขมัน" value={food.fat} unit="g"
+            bg="#FAEEDA" textColor="#633806"
             icon={
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M7 2c0 0-3.5 2.5-3.5 5.5S5 11.5 7 11.5s3.5-1.5 3.5-4S7 2 7 2z" fill="#EF9F27" opacity="0.7" />
@@ -147,11 +170,8 @@ export default function Result({ food, onNavigate }) {
             }
           />
           <MacroCard
-            label="คาร์โบไฮเดรต"
-            value={food.carbs}
-            unit="g"
-            bg="#EAF3DE"
-            textColor="#27500A"
+            label="คาร์โบไฮเดรต" value={food.carbs} unit="g"
+            bg="#EAF3DE" textColor="#27500A"
             icon={
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <ellipse cx="7" cy="9.5" rx="4" ry="2" fill="#639922" opacity="0.6" />
@@ -164,22 +184,16 @@ export default function Result({ food, onNavigate }) {
 
         {/* Save Button */}
         <button
-          onClick={() => onNavigate("history")}
+          onClick={handleSave}
+          disabled={saving || saved}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-[13px] font-medium"
-          style={{ background: "#1D9E75" }}
+          style={{ background: saved ? "#888780" : saving ? "#9FE1CB" : "#1D9E75" }}
         >
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-            <path d="M7.5 2v9M5 9l2.5 2.5L10 9" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
-            <rect x="2" y="12" width="11" height="1.5" rx="0.75" fill="white" />
-          </svg>
-          บันทึกลงประวัติการกิน
+          {saved ? "บันทึกแล้ว ✓" : saving ? "กำลังบันทึก..." : "บันทึกลงประวัติการกิน"}
         </button>
 
-        {/* Nutritional Info Note */}
-        <div
-          className="rounded-xl p-3 flex gap-2 items-start"
-          style={{ background: "#E6F1FB" }}
-        >
+        {/* Note */}
+        <div className="rounded-xl p-3 flex gap-2 items-start" style={{ background: "#E6F1FB" }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="mt-0.5 flex-shrink-0">
             <circle cx="7" cy="7" r="6" stroke="#378ADD" strokeWidth="1.2" />
             <path d="M7 6v4" stroke="#378ADD" strokeWidth="1.2" strokeLinecap="round" />
@@ -191,5 +205,5 @@ export default function Result({ food, onNavigate }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

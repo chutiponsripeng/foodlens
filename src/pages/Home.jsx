@@ -1,16 +1,34 @@
-import { useState } from "react";
-import { categories, CategoryCard } from "../components/CategoryIcons";
-
-const recentScans = [
-  { id: 1, name: "ข้าวมันไก่", calories: 612, categoryId: "chicken" },
-  { id: 2, name: "ส้มตำ", calories: 187, categoryId: "veg" },
-  { id: 3, name: "กะเพรา", calories: 380, categoryId: "chicken" },
-];
+import { useState, useEffect } from "react"
+import { categories, CategoryCard } from "../components/CategoryIcons"
+import { db } from "../firebase/config"
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore"
 
 export default function Home({ onScan, loading }) {
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(null)
+  const [recentScans, setRecentScans] = useState([])
 
-  // รับไฟล์รูปจาก input แล้วแปลงเป็น base64 ส่งไป App.jsx
+  // ดึงข้อมูลสแกนล่าสุดจาก Firestore
+  useEffect(() => {
+    const fetchRecent = async () => {
+      try {
+        const q = query(
+          collection(db, 'meals'),
+          orderBy('createdAt', 'desc'),
+          limit(3)
+        )
+        const snap = await getDocs(q)
+        const data = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        setRecentScans(data)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchRecent()
+  }, [])
+
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -49,17 +67,12 @@ export default function Home({ onScan, loading }) {
           </div>
         </div>
 
-        {/* Upload Zone — เปลี่ยนจาก div เป็น label ห่อ input */}
+        {/* Upload Zone */}
         <label
           className="bg-white rounded-2xl p-5 flex flex-col items-center gap-2 cursor-pointer"
           style={{ border: "1.5px dashed #85B7EB" }}
         >
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+          <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: "#E6F1FB" }}>
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
               <rect x="2" y="5" width="18" height="14" rx="3" stroke="#378ADD" strokeWidth="1.5" />
@@ -75,18 +88,12 @@ export default function Home({ onScan, loading }) {
           </div>
         </label>
 
-        {/* Camera Button — เปลี่ยนเป็น label ห่อ input capture กล้อง */}
+        {/* Camera Button */}
         <label
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-[13px] font-medium cursor-pointer"
           style={{ background: loading ? "#85B7EB" : "#378ADD" }}
         >
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
             <rect x="1" y="3.5" width="13" height="9" rx="2" stroke="white" strokeWidth="1.3" />
             <circle cx="7.5" cy="8" r="2.2" stroke="white" strokeWidth="1.3" />
@@ -117,35 +124,41 @@ export default function Home({ onScan, loading }) {
           <div className="text-[10px] font-medium mb-2" style={{ color: "#8A97A8", letterSpacing: "0.04em" }}>
             สแกนล่าสุด
           </div>
-          <div className="flex flex-col gap-2">
-            {recentScans.map((item) => {
-              const cat = categories.find((c) => c.id === item.categoryId);
-              return (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl border flex items-center gap-3 px-3 py-2.5"
-                  style={{ borderColor: "#E2E8F0" }}
-                >
+          {recentScans.length === 0 ? (
+            <div className="text-center py-4">
+              <div className="text-xs font-light" style={{ color: "#8A97A8" }}>ยังไม่มีประวัติการสแกน</div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {recentScans.map((item) => {
+                const cat = categories.find((c) => c.id === item.categoryId) || categories[7]
+                return (
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: cat?.iconBg || "#888780" }}
+                    key={item.id}
+                    className="bg-white rounded-xl border flex items-center gap-3 px-3 py-2.5"
+                    style={{ borderColor: "#E2E8F0" }}
                   >
-                    {cat?.icon}
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: cat?.iconBg || "#888780" }}
+                    >
+                      {cat?.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[12px] font-medium" style={{ color: "#0C447C" }}>{item.name}</div>
+                      <div className="text-[9px] font-light mt-0.5" style={{ color: "#8A97A8" }}>{cat?.name}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[13px] font-medium" style={{ color: "#378ADD" }}>{item.calories}</div>
+                      <div className="text-[9px]" style={{ color: "#8A97A8" }}>kcal</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-[12px] font-medium" style={{ color: "#0C447C" }}>{item.name}</div>
-                    <div className="text-[9px] font-light mt-0.5" style={{ color: "#8A97A8" }}>{cat?.name}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[13px] font-medium" style={{ color: "#378ADD" }}>{item.calories}</div>
-                    <div className="text-[9px]" style={{ color: "#8A97A8" }}>kcal</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
-  );
+  )
 }
