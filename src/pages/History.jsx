@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import { db } from "../firebase/config"
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore"
 import { categories } from "../components/CategoryIcons"
+import { getUserId } from '../utils/userId'
+import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore"
 
 export default function History({ onNavigate }) {
   const [meals, setMeals] = useState([])
@@ -13,6 +14,7 @@ export default function History({ onNavigate }) {
       try {
         const q = query(
           collection(db, 'meals'),
+          where('userId', '==', getUserId()),
           orderBy('createdAt', 'desc'),
           limit(20)
         )

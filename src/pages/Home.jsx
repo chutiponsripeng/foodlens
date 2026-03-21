@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react"
 import { categories, CategoryCard } from "../components/CategoryIcons"
 import { db } from "../firebase/config"
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore"
+import { getUserId } from '../utils/userId'
+import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore"
 
 export default function Home({ onScan, loading }) {
   const [activeCategory, setActiveCategory] = useState(null)
@@ -13,6 +14,7 @@ export default function Home({ onScan, loading }) {
       try {
         const q = query(
           collection(db, 'meals'),
+          where('userId', '==', getUserId()), //localstorage
           orderBy('createdAt', 'desc'),
           limit(3)
         )

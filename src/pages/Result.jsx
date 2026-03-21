@@ -2,6 +2,7 @@ import { useState } from "react"
 import { categories } from "../components/CategoryIcons"
 import { db } from "../firebase/config"
 import { collection, addDoc } from "firebase/firestore"
+import { getUserId } from '../utils/userId'
 
 const MacroCard = ({ label, value, unit, bg, textColor, icon }) => (
   <div className="bg-white rounded-xl border flex flex-col items-center py-2.5 px-1 gap-1" style={{ borderColor: "#E2E8F0" }}>
@@ -22,6 +23,7 @@ export default function Result({ food, onNavigate }) {
     setSaving(true)
     try {
       await addDoc(collection(db, 'meals'), {
+        userId: getUserId(),
         name: food.name,
         calories: food.calories,
         protein: food.protein,
