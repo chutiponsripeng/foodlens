@@ -50,7 +50,7 @@ VITE_GROQ_API_KEY=นำ_API_KEY_จาก_GroqCloud_มาใส่ที่น
 
 ## 📝 ภาพรวมการทำงานที่สำคัญ (Key Implementations)
 
-- `src/services/gemini.js` - ถูกสลับเป็นคำสั่งในการยิงหา **Groq API** แทน (เพื่อความเร็วและรองรับโมเดล Llama Vision)
+- `src/services/groq.js` - ถูกสลับเป็นคำสั่งในการยิงหา **Groq API** แทน (เพื่อความเร็วและรองรับโมเดล Llama Vision)
 - `src/utils/userId.js` - ตัวสร้างและเรียกใช้งาน `foodlens_user_id` สุ่มแบบไม่ระบุตัวตน 
 - `firebase.json` - ตั้งค่า `rewrites` เอาไว้เพื่อรองรับระบบ Route ของแแอปให้ดึงจาก `dist/index.html` 
 

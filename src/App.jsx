@@ -3,7 +3,7 @@ import Home from "./pages/Home";
 import Result from "./pages/Result";
 import History from "./pages/History";
 import BottomNav from "./components/BottomNav";
-import { analyzeFoodImage } from "./services/gemini";
+import { analyzeFoodImage } from "./services/groq";
 
 export default function App() {
   const [page, setPage] = useState("home");
