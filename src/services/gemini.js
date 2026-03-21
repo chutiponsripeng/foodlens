@@ -1,21 +1,28 @@
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${API_KEY}`
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY
+const API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
 export async function analyzeFoodImage(base64Image) {
   const response = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`
+    },
     body: JSON.stringify({
-      contents: [{
-        parts: [
-          {
-            inline_data: {
-              mime_type: 'image/jpeg',
-              data: base64Image
-            }
-          },
-          {
-            text: `วิเคราะห์อาหารในรูปนี้ ตอบเป็น JSON เท่านั้น ไม่ต้องมีข้อความอื่น:
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`
+              }
+            },
+            {
+              type: 'text',
+              text: `วิเคราะห์อาหารในรูปนี้ ตอบเป็น JSON เท่านั้น ไม่ต้องมีข้อความอื่น:
 {
   "name": "ชื่ออาหารภาษาไทย",
   "calories": ตัวเลขแคลอรี่,
@@ -25,20 +32,18 @@ export async function analyzeFoodImage(base64Image) {
   "confidence": ตัวเลขความมั่นใจ 0-100,
   "category": "หมวดหมู่อาหาร"
 }`
-          }
-        ]
-      }]
+            }
+          ]
+        }
+      ],
+      max_tokens: 500
     })
   })
 
   const data = await response.json()
+  if (!response.ok) throw new Error(data.error?.message || 'Groq API error')
 
-  // ถ้า API error ให้ throw error ที่อ่านได้
-  if (!response.ok) {
-    throw new Error(data.error?.message || 'Gemini API error')
-  }
-
-  const text = data.candidates[0].content.parts[0].text
+  const text = data.choices[0].message.content
   const clean = text.replace(/```json|```/g, '').trim()
   return JSON.parse(clean)
 }

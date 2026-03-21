@@ -13,24 +13,9 @@ export default function App() {
   const handleScan = async (base64Image) => {
     setLoading(true)
     try {
-      // mock data สำหรับทดสอบ UI ก่อน
-      const result = {
-        name: "ข้าวมันไก่",
-        calories: 612,
-        protein: 42,
-        fat: 18,
-        carbs: 78,
-        confidence: 94,
-        category: "ไก่/เนื้อ + ข้าว",
-        goalCalories: 1800,
-      }
-      setSelectedFood(result)
+      const result = await analyzeFoodImage(base64Image)
+      setSelectedFood({ ...result, goalCalories: 1800 })
       setPage("result")
-
-      // เปิด comment นี้เมื่อ quota reset แล้ว
-      // const result = await analyzeFoodImage(base64Image)
-      // setSelectedFood({ ...result, goalCalories: 1800 })
-      // setPage("result")
     } catch (e) {
       alert(e.message)
     } finally {

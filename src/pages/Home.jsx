@@ -4,6 +4,7 @@ import { db } from "../firebase/config"
 import { getUserId } from '../utils/userId'
 import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore"
 
+
 export default function Home({ onScan, loading }) {
   const [activeCategory, setActiveCategory] = useState(null)
   const [recentScans, setRecentScans] = useState([])
@@ -63,7 +64,7 @@ export default function Home({ onScan, loading }) {
       <div className="flex flex-col gap-4 px-4 pt-4 pb-4">
         {/* Greeting */}
         <div>
-          <div className="text-sm font-medium" style={{ color: "#0C447C" }}>สวัสดีครับ! 👋</div>
+          <div className="text-sm font-medium" style={{ color: "#0C447C" }}>สวัสดี!</div>
           <div className="text-[11px] font-light mt-0.5" style={{ color: "#8A97A8" }}>
             ถ่ายรูปอาหารเพื่อดูแคลอรี่ทันที
           </div>
