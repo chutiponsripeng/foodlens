@@ -3,12 +3,15 @@ import { db } from "../firebase/config"
 import { categories } from "../components/CategoryIcons"
 import { getUserId } from '../utils/userId'
 import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore"
+import { getGoalCalories, setGoalCalories } from "../utils/goalCalories"
 
 export default function History({ onNavigate }) {
   const [meals, setMeals] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showGoalModal, setShowGoalModal] = useState(false)
+  const [goalInput, setGoalInput] = useState(getGoalCalories())
+  const [goalCalories, setGoalCaloriesState] = useState(getGoalCalories())
 
-  // ดึงข้อมูลจาก Firestore ตอน component โหลด
   useEffect(() => {
     const fetchMeals = async () => {
       try {
@@ -19,10 +22,7 @@ export default function History({ onNavigate }) {
           limit(20)
         )
         const snap = await getDocs(q)
-        const data = snap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
+        const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setMeals(data)
       } catch (e) {
         console.error(e)
@@ -33,11 +33,20 @@ export default function History({ onNavigate }) {
     fetchMeals()
   }, [])
 
-  // คำนวณแคลอรี่รวมวันนี้
+  const handleSaveGoal = () => {
+    const val = parseInt(goalInput)
+    if (!val || val < 500 || val > 5000) {
+      alert('กรุณาใส่ค่าระหว่าง 500 - 5000 kcal')
+      return
+    }
+    setGoalCalories(val)
+    setGoalCaloriesState(val)
+    setShowGoalModal(false)
+  }
+
   const today = new Date().toISOString().split('T')[0]
   const todayMeals = meals.filter(m => m.createdAt?.startsWith(today))
   const totalCalories = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0)
-  const goalCalories = 1800
   const pct = Math.min(Math.round((totalCalories / goalCalories) * 100), 100)
 
   if (loading) {
@@ -50,12 +59,83 @@ export default function History({ onNavigate }) {
 
   return (
     <div className="flex flex-col">
+
+      {/* Goal Modal */}
+      {showGoalModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          style={{ background: "rgba(0,0,0,0.4)" }}
+        >
+          <div className="bg-white rounded-2xl p-5 w-full max-w-xs">
+            <div className="text-[14px] font-semibold mb-1" style={{ color: "#0C447C" }}>
+              ตั้งเป้าหมายแคลอรี่
+            </div>
+            <div className="text-[11px] font-light mb-4" style={{ color: "#8A97A8" }}>
+              แนะนำ: 1,500–2,500 kcal/วัน
+            </div>
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                type="number"
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+                className="flex-1 border rounded-xl px-3 py-2 text-sm text-center font-medium"
+                style={{ borderColor: "#B5D4F4", color: "#0C447C" }}
+                min="500"
+                max="5000"
+              />
+              <span className="text-sm font-light" style={{ color: "#8A97A8" }}>kcal</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[1500, 1800, 2000, 2200, 2500, 3000].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setGoalInput(v)}
+                  className="py-1.5 rounded-lg text-[11px] font-medium border"
+                  style={{
+                    background: goalInput == v ? "#E6F1FB" : "#fff",
+                    borderColor: goalInput == v ? "#378ADD" : "#E2E8F0",
+                    color: goalInput == v ? "#0C447C" : "#8A97A8"
+                  }}
+                >
+                  {v.toLocaleString()}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowGoalModal(false)}
+                className="flex-1 py-2.5 rounded-xl text-[13px] border"
+                style={{ borderColor: "#E2E8F0", color: "#8A97A8" }}
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleSaveGoal}
+                className="flex-1 py-2.5 rounded-xl text-[13px] text-white font-medium"
+                style={{ background: "#378ADD" }}
+              >
+                บันทึก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-3 pb-3">
         <div className="text-[10px] font-light" style={{ color: "#8A97A8" }}>
           {new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </div>
-        <div className="text-[15px] font-semibold mt-1" style={{ color: "#0C447C" }}>ประวัติการกิน</div>
+        <div className="flex items-center justify-between mt-1">
+          <div className="text-[15px] font-semibold" style={{ color: "#0C447C" }}>ประวัติการกิน</div>
+          <button
+            onClick={() => setShowGoalModal(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium border"
+            style={{ borderColor: "#B5D4F4", color: "#185FA5", background: "#E6F1FB" }}
+          >
+            เป้าหมาย {goalCalories.toLocaleString()} kcal
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 px-4 pt-3 pb-4">
@@ -75,7 +155,7 @@ export default function History({ onNavigate }) {
           </div>
           <div className="text-[9px] font-light" style={{ color: "rgba(255,255,255,0.65)" }}>
             {totalCalories >= goalCalories
-              ? "ถึงเป้าหมายแล้ว!"
+              ? "ถึงเป้าหมายแล้ว! 🎉"
               : `เหลืออีก ${(goalCalories - totalCalories).toLocaleString()} kcal — ทำได้ดีมาก!`}
           </div>
         </div>
