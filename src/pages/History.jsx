@@ -11,6 +11,7 @@ export default function History({ onNavigate }) {
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [goalInput, setGoalInput] = useState(getGoalCalories())
   const [goalCalories, setGoalCaloriesState] = useState(getGoalCalories())
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     const fetchMeals = async () => {
@@ -33,15 +34,21 @@ export default function History({ onNavigate }) {
     fetchMeals()
   }, [])
 
+  const showToast = (msg, type = 'error') => {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
   const handleSaveGoal = () => {
     const val = parseInt(goalInput)
     if (!val || val < 500 || val > 5000) {
-      alert('กรุณาใส่ค่าระหว่าง 500 - 5000 kcal')
+      showToast('กรุณาใส่ค่าระหว่าง 500 - 5,000 kcal')
       return
     }
     setGoalCalories(val)
     setGoalCaloriesState(val)
     setShowGoalModal(false)
+    showToast(`ตั้งเป้าหมาย ${val.toLocaleString()} kcal แล้ว!`, 'success')
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -60,11 +67,33 @@ export default function History({ onNavigate }) {
   return (
     <div className="flex flex-col">
 
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed top-10 left-1/2 z-50 px-4 py-2.5 rounded-xl text-[12px] font-medium"
+          style={{
+            zIndex: 9999,
+            transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap',
+            background: toast.type === 'success' ? '#E1F5EE' : '#FCEBEB',
+            color: toast.type === 'success' ? '#085041' : '#A32D2D',
+            border: `1px solid ${toast.type === 'success' ? '#9FE1CB' : '#F7C1C1'}`,
+            animation: 'slideDown 0.3s ease'
+          }}
+        >
+          {toast.type === 'success' ? '✓ ' : '⚠ '}{toast.msg}
+        </div>
+      )}
+
       {/* Goal Modal */}
       {showGoalModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-6"
-          style={{ background: "rgba(0,0,0,0.4)" }}
+          style={{
+            zIndex: 100,
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(2px)"
+           }}
         >
           <div className="bg-white rounded-2xl p-5 w-full max-w-xs">
             <div className="text-[14px] font-semibold mb-1" style={{ color: "#0C447C" }}>
@@ -133,7 +162,7 @@ export default function History({ onNavigate }) {
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium border"
             style={{ borderColor: "#B5D4F4", color: "#185FA5", background: "#E6F1FB" }}
           >
-            เป้าหมาย {goalCalories.toLocaleString()} kcal
+            เป้าหมาย {goalCalories.toLocaleString()} kcal (คลิกเพื่อแก้ไข)
           </button>
         </div>
       </div>
@@ -155,7 +184,7 @@ export default function History({ onNavigate }) {
           </div>
           <div className="text-[9px] font-light" style={{ color: "rgba(255,255,255,0.65)" }}>
             {totalCalories >= goalCalories
-              ? "ถึงเป้าหมายแล้ว! 🎉"
+              ? "ถึงเป้าหมายแล้ว!"
               : `เหลืออีก ${(goalCalories - totalCalories).toLocaleString()} kcal — ทำได้ดีมาก!`}
           </div>
         </div>
